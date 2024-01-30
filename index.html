@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Port Scanner HTML Project 1.01</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .container {
+      margin-top: 50px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    #result {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
+      text-align: center;
+    }
+    #result.open {
+      color: green;
+      font-weight: bold;
+    }
+    #result.closed {
+      color: red;
+      font-weight: bold;
+    }
+    #pingTable {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #scanButton {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Port Scanner HTML Project 1.01</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Scan Ports</h1>
+  <form>
+    <div class="mb-3">
+      <label for="ipAddress" class="form-label">IP Address:</label>
+      <input type="text" class="form-control" id="ipAddress" name="ipAddress" required>
+    </div>
+    <div class="mb-3">
+      <label for="portNumber" class="form-label">Port Number:</label>
+      <input type="number" class="form-control" id="portNumber" name="portNumber" required>
+    </div>
+    <div id="scanButton">
+      <button type="button" class="btn btn-primary" onclick="scanPort()">Scan Port</button>
+    </div>
+  </form>
+  <div id="result"></div>
+  <div id="pingTable"></div>
+</div>
+
+<!-- Bootstrap JS and Popper.js (required for Bootstrap JavaScript components) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function scanPort() {
+    const ipAddress = document.getElementById('ipAddress').value;
+    const portNumber = document.getElementById('portNumber').value;
+
+    fetch(`/scan.php?ip=${ipAddress}&port=${portNumber}`)
+      .then(response => response.json())
+      .then(data => {
+        const resultElement = document.getElementById('result');
+        resultElement.innerText = data.result;
+
+        if (data.isOpen) {
+          resultElement.className = 'open';
+        } else {
+          resultElement.className = 'closed';
+        }
+
+        if (data.pingTable) {
+          document.getElementById('pingTable').innerHTML = data.pingTable;
+        }
+
+        if (data.averagePing) {
+          resultElement.innerText += `\nAverage Ping: ${data.averagePing.toFixed(2)} ms`;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('result').innerText = 'Error occurred during scanning.';
+      });
+  }
+</script>
+
+</body>
+</html>
