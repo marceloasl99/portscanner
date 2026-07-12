@@ -1,30 +1,16 @@
-# Authorized Port Check
+# Port Tools
 
-A small PHP application for checking approved TCP services from the web server that hosts the project.
+A complete experimental project with two independent modes.
 
-## Security model
+## 1. Scan IP addresses
 
-This application is intentionally not an unrestricted port scanner.
+The browser sends selected IPv4 addresses and standard TCP ports to `scan.php`. The PHP server performs TCP connection checks and returns a clear report.
 
-- The user must confirm authorization in the browser.
-- `scan.php` independently enforces a server-side IP/CIDR allowlist.
-- Only ports defined in `config.php` can be tested.
-- Each request is limited to a small number of ports.
-- A per-session/IP rate limit reduces automated abuse.
-- The backend accepts JSON POST requests and uses a CSRF token.
-- No shell commands, `ping`, `exec`, or user-controlled URLs are used.
-- Connections are pinned directly to an allowlisted IPv4 address.
+## 2. Inspect this computer locally
 
-The consent checkbox is not the security boundary. The allowlist in `config.php` is the security boundary.
+`local-scanner.ps1` runs directly on Windows and lists TCP ports currently in the `Listen` state. This mode does not send IP addresses, ports, process names, or results to the website, PHP host, or cloud.
 
-## Requirements
-
-- PHP 8.1 or newer.
-- A web server with outbound TCP connectivity to the approved targets.
-- HTTPS is strongly recommended.
-- `fsockopen()` must be enabled.
-
-GitHub Pages cannot execute PHP. Use a PHP-capable host, VM, container, or internal web server.
+A normal browser cannot inspect operating-system TCP listeners directly. The local PowerShell script is therefore required for a real local-only result.
 
 ## Files
 
@@ -32,70 +18,46 @@ GitHub Pages cannot execute PHP. Use a PHP-capable host, VM, container, or inter
 /
 ├── index.html
 ├── scan.php
-├── config.php
-├── .htaccess
+├── local-scanner.ps1
 └── README.md
 ```
 
-## Configure authorized targets
+## Server mode requirements
 
-Open `config.php` and edit `allowed_targets`.
+- PHP 8.1 or newer
+- `fsockopen()` enabled
+- `index.html` and `scan.php` in the same directory
 
-Exact IPv4 example:
+GitHub Pages can display `index.html` but cannot execute `scan.php`. Remote mode requires PHP hosting. The local PowerShell mode can still be downloaded from static hosting.
 
-```php
-'allowed_targets' => [
-    ['label' => 'Authorized web server', 'cidr' => '198.51.100.25/32'],
-],
+## Local Windows mode
+
+1. Download `local-scanner.ps1` from the **This computer** tab.
+2. Right-click it and choose **Run with PowerShell**.
+3. If blocked, run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\local-scanner.ps1
 ```
 
-Authorized network example:
+The script:
 
-```php
-'allowed_targets' => [
-    ['label' => 'Authorized lab', 'cidr' => '10.20.30.0/24'],
-],
-```
+- Uses `Get-NetTCPConnection -State Listen`.
+- Falls back to `netstat -ano -p tcp` if required.
+- Shows local address, TCP port, scope, PID, process, and likely service.
+- Writes and opens `local-ports-YYYY-MM-DD_HH-mm-ss.html` beside the script.
+- Makes no network request and has no upload code.
 
-Use private ranges only when this application runs inside the authorized private network. Never add an address or network without explicit permission.
+Administrator rights are not normally required to list ports, but process names may be unavailable for processes the current account cannot inspect.
 
-The current browser selector supports exact `/32` targets. CIDR ranges are enforced by the backend but intentionally disabled in the browser selector. For a subnet, add each approved device as a separate `/32` entry to keep the UI explicit and auditable.
+## Authorization
 
-## Configure services
+Only scan systems you own or have explicit permission to test. Clicking the remote scan button confirms that authorization.
 
-Edit the `services` array in `config.php`. A port must exist in this array or the backend rejects it.
-
-Presets only group ports already present in `services`.
-
-## Deployment
-
-1. Upload all files to the same directory on a PHP-capable server.
-2. Edit `config.php` with authorized `/32` targets.
-3. Confirm PHP 8.1+ and `fsockopen()` availability.
-4. Enable HTTPS.
-5. Open `index.html` through the server.
-6. Test only a target you own or are explicitly authorized to assess.
-
-## Result meaning
+## Result interpretation
 
 - **Open:** the PHP server completed a TCP connection.
-- **No connection:** the connection failed. This cannot reliably distinguish closed, firewall-filtered, routing failure, or timeout.
+- **No connection:** closed, filtered, unreachable, or timed out.
+- **Listening locally:** Windows reports that a local process is accepting TCP connections on that address and port.
 
-The test originates from the PHP server, not from the user's phone or workstation. A private IP refers to the server's network view.
-
-## Important limitations
-
-- TCP only; UDP services are not tested.
-- This is a connection check, not service fingerprinting or vulnerability detection.
-- No banner grabbing, authentication attempts, packet crafting, or firewall evasion is performed.
-- Browser-side controls can be bypassed, so all important restrictions are also enforced in PHP.
-
-## Recommended production hardening
-
-- Place the application behind company authentication or VPN access.
-- Restrict inbound access by source IP at the reverse proxy/firewall.
-- Restrict outbound traffic from the PHP server to only approved destination IPs and ports.
-- Keep PHP and the operating system patched.
-- Store `config.php` outside the public web root when the hosting platform supports it.
-- Review web server logs and rate-limit events.
-- Use a dedicated service account/container with minimal permissions.
+An address of `127.0.0.1` or `::1` is localhost-only. `0.0.0.0` or `::` generally indicates all local interfaces. Firewall policy may still control actual remote access.
