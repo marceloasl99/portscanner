@@ -1,94 +1,138 @@
-# Port Tools
+# Port Tools v2
 
-An experimental toolkit with two independent modes:
+A small toolkit with two independent modes:
 
-1. **Remote IP scan** (`index.html` + `scan.php`): the browser sends IPv4 addresses and TCP ports to a PHP server, which runs TCP connection checks and returns a report.
-2. **Local computer inspector** (`local-scanner.ps1`): a PowerShell script that collects listening ports, connections, processes, network configuration, hosts file and firewall rules, then writes one interactive HTML report. Nothing leaves the machine.
+1. **Remote scan** (`index.html` + `scan.php`): the browser sends IPv4 targets and TCP ports to a PHP server, which tries a TCP connection to each one and returns a report.
+2. **Local computer inspector** (`local-scanner.ps1`): a PowerShell script that collects listening ports, connections, processes, network configuration, hosts file and firewall rules and writes one interactive HTML report. Nothing leaves the machine.
 
 > Only scan systems you own or have explicit permission to test.
+
+![Scan results](docs/screenshots/02-scan-results.png)
+
+*The screenshots use the built-in demo mode, which generates simulated results.*
+
+## What is new in v2
+
+**Remote scan**
+- **Ranges and subnets** as targets: `10.0.0.5`, `10.0.0.1-20`, `10.0.0.0/28`, with a live count of hosts.
+- **Custom ports and ranges** (`8000-8010, 9000`) next to the presets; 40 known services and 8 presets (new: Mail, Exposed services).
+- **Port matrix**: one row per host, one cell per port, filled in live as each host answers. Cells use colour and a symbol (`●` open, `?` worth a look, `!` exposed risk), so they do not rely on colour alone.
+- **Attention levels**: open ports such as RDP, SMB, Telnet, Redis or Elasticsearch are flagged with a short explanation.
+- **Progress and cancel**: hosts are scanned four at a time with a progress bar; the scan can be stopped without losing finished hosts.
+- **History and comparison**: the last 12 scans are kept in the browser. Running the same targets again shows which ports are newly open or no longer open.
+- **Export**: copy as text, or download Markdown, CSV or JSON.
+- **Demo mode**: when no PHP is available (for example GitHub Pages) the interface still works with simulated data. Add `?demo=1` to force it.
+- New design with light and dark themes, keyboard navigation, visible focus, reduced-motion support and a layout that works on a phone.
+
+**Server (`scan.php`)**
+- Ports of one host are checked in parallel instead of one after another.
+- Targets that are never scanned: `0.0.0.0/8`, loopback, link-local (cloud metadata) and multicast addresses.
+- Limits and options moved to `config.php`: request size, ports per request, timeout, an `allow_private` switch for public servers and an optional access token (`X-Access-Token` header).
+- Each result carries a `risk` level and a `note`.
 
 ## Files
 
 ```text
 /
-├── index.html            Web UI (tabs: remote scan and this computer)
-├── scan.php              Remote scan backend (requires PHP)
+├── index.html            Web UI (Scan, History, This computer)
+├── assets/app.css        Styles, light and dark themes
+├── assets/app.js         Front end logic, no dependencies
+├── scan.php              Remote scan backend (requires PHP 8.1+)
+├── config.php            Limits, timeout, private-range switch, access token
 ├── local-scanner.ps1     Local inspector: collects data and builds the HTML report
 ├── Run-local-scan.bat    Double-click launcher for the local inspector
-├── config.php            Project configuration
-├── .htaccess, .gitattributes, README.md
+├── docs/screenshots/     Images used in this README
+└── .htaccess, .gitattributes, README.md
 ```
 
-## Local inspector (recommended)
+## Remote scan
 
-1. In the **This computer** tab of `index.html`, download `Run-local-scan.bat` and `local-scanner.ps1` into the same folder.
+Requirements: PHP 8.1 or newer. No extensions beyond the default ones.
+
+```powershell
+php -S localhost:8000
+```
+
+Then open <http://localhost:8000>. On Apache or nginx put the folder behind PHP-FPM; `.htaccess` hides `config.php` and sets security headers on Apache.
+
+GitHub Pages can display the interface but cannot run `scan.php`, so the page falls back to demo mode there.
+
+### Configuration (`config.php`)
+
+| Key | Default | Meaning |
+|---|---|---|
+| `max_targets_per_request` | 16 | Hosts accepted by one POST |
+| `max_total_targets` | 256 | Hosts the UI expands from ranges or subnets in one scan |
+| `max_ports` | 64 | Ports per request |
+| `timeout` | 1.2 | Seconds to wait per connection |
+| `allow_private` | `true` | Set `false` on a public server to refuse 10/8, 172.16/12 and 192.168/16 |
+| `access_token` | empty | When set, clients must send it as `X-Access-Token` |
+
+On a server reachable from the internet, set `allow_private` to `false` and set an access token.
+
+### API
+
+```text
+GET  scan.php   -> services, presets, risk levels and limits
+POST scan.php   -> {"targets": ["10.0.0.5", "10.0.0.0/28"], "ports": [22, 80, "8000-8010"]}
+```
+
+Each port result: `port`, `service`, `status` (`open` or `no_connection`), `ms`, `risk` (`none`, `low`, `medium`, `high`) and `note`.
+
+How to read results:
+
+- **Open**: the PHP server completed a TCP connection.
+- **No connection**: closed, filtered, unreachable or timed out. On Windows a refused connection also shows up only after the timeout.
+
+## Local inspector
+
+![Local inspector tab](docs/screenshots/05-local-inspector.png)
+
+1. In the **This computer** tab, download `Run-local-scan.bat` and `local-scanner.ps1` into one folder (or use the files from this repository).
 2. Double-click `Run-local-scan.bat`.
-3. The report `local-ports-YYYY-MM-DD_HH-mm-ss.html` opens in your browser and is saved in that folder.
+3. The report `local-ports-YYYY-MM-DD_HH-mm-ss.html` opens in your browser and is saved next to the script.
 
-From PowerShell instead:
+From PowerShell:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\local-scanner.ps1
 ```
 
-Optional traffic capture (requires PowerShell as administrator):
+Optional traffic capture (PowerShell as administrator, not tested in this environment):
 
 ```powershell
 .\local-scanner.ps1 -CaptureSeconds 30
 ```
 
-This writes `capture-*.etl` and `capture-*.pcapng` (open the `.pcapng` in Wireshark). Not tested in this environment because it needs administrator rights.
+The report contains an overview with prioritised findings, listening ports with likely service, scope and risk, connections, processes, network configuration, the hosts file, firewall rules and the capture status.
 
-### What the report contains
+Limitations: "likely use" and risk levels are estimates from port number, process name and path. Without administrator rights some paths, command lines and firewall rules are unavailable. The script performs no reverse DNS lookups and no other network requests.
 
-- **Overview**: summary cards, primary network (interface, IP, gateway, DNS), prioritized findings (high, medium, info), most active processes and most used remote services.
-- **Ports**: TCP and UDP listeners with likely service, likely use (estimated from the port), scope (localhost only, all interfaces, specific interface), risk level and owning process. Filters for protocol, scope and risk.
-- **Connections**: TCP sockets with local and remote endpoints, state, process, direction and estimated remote service.
-- **Processes**: PID, name, estimated purpose, executable path, command line, ports and connections.
-- **Network**: adapters and MAC addresses, IP addresses, neighbors (ARP), routes, DNS servers, raw `ipconfig /all` and `route print` output.
-- **Hosts**: the Windows `hosts` file, with active entries highlighted.
-- **Firewall**: profile status and default actions, and inbound allow rules, marked as "broad" (any port and any program) or as matching a port that is currently listening.
-- **Capture**: status and instructions for the optional traffic capture.
+## More screenshots
 
-Use the **Expand** and **Collapse** buttons to open or close all details. Click a row to see its details. Press `/` to search. The **Theme** button switches between dark (default) and light.
-
-### Limitations
-
-- "Likely use" and "purpose" are **estimates** based on port number, process name and executable path. They are not proof.
-- The risk level is heuristic: it combines exposure scope with a list of services that are commonly risky when exposed.
-- Without administrator rights, some process paths, command lines and firewall rules are unavailable.
-- The script performs no reverse DNS lookups and no other network requests. Remote host names are not resolved.
-
-## Remote scan (requires PHP)
-
-Requirements: PHP 8.1 or newer, `fsockopen()` enabled, and `index.html` and `scan.php` in the same folder.
-
-GitHub Pages can display `index.html` but cannot run `scan.php`, so remote scanning needs PHP hosting. Not yet tested here because PHP is not installed.
-
-Results:
-
-- **Open:** the PHP server completed a TCP connection.
-- **No connection:** closed, filtered, unreachable or timed out.
+| Dark theme | Phone | History |
+|---|---|---|
+| ![Dark](docs/screenshots/03-scan-results-dark.png) | ![Phone](docs/screenshots/06-mobile.png) | ![History](docs/screenshots/04-history.png) |
 
 ## Change history
 
-1. Cloned `github.com/marceloasl99/portscanner` into `C:\33\4\portscanner`.
-2. First local inspector: listening TCP ports with likely service and process, written to a simple HTML report.
-3. Detailed report: address, scope, risk level with notes, executable path and command line, established connections, filter and grouping by process. Added `Run-local-scan.bat` and the **This computer** tab in `index.html`.
-4. Network and firewall collection: `ipconfig /all`, adapters and MAC addresses, IP addresses, ARP neighbors, `route print`, the `hosts` file, firewall profiles and inbound allow rules.
-5. Rebuilt the report as an interactive web UI: overview with navigation cards, sections (Ports, Connections, Processes, Network, Hosts, Firewall, Capture), expandable details, estimated use and purpose, prioritized findings and optional capture with `pktmon`.
-6. Fixed a PowerShell variable collision (`$L`/`$l`, `$C`/`$c`, `$P`/`$p`) that zeroed counts, and saved the script with a UTF-8 BOM so accents render correctly.
-7. Restyled the report to a black-and-white design with a light theme, a sticky header, per-table search, keyboard support and a copy button for raw output.
+**v2.0.0**
+- Rebuilt interface (`assets/app.css`, `assets/app.js`) with port matrix, filters, history with comparison, exports, themes and demo mode.
+- `scan.php`: ranges and CIDR, custom ports, parallel connects, risk notes, forbidden address ranges, token and limits in `config.php`.
+- Tested: PHP syntax, GET and POST against a real listener (open and closed ports detected, loopback and link-local refused), and the interface in headless Chrome (desktop, dark, phone) with no console errors.
+
+**v1**
+1. First local inspector with listening TCP ports.
+2. Detailed report with risk levels, connections, processes, network and firewall data.
+3. Interactive report with findings, black-and-white design and optional capture with `pktmon`.
 
 ## Plan and next steps
 
-- [ ] Install PHP and test remote scanning (`php -S localhost:8000` in the project folder).
-- [ ] Test traffic capture from an elevated PowerShell and confirm the `pktmon` options (`--pkt-size`, `-f`, `etl2pcap`).
+- [ ] Test traffic capture from an elevated PowerShell and confirm the `pktmon` options.
 - [ ] Run the inspector as administrator and confirm paths and command lines for all processes.
-- [ ] Review the firewall table (hundreds of rules) and consider collapsing it by default.
-- [ ] Add a traffic summary from the capture (top destinations and ports) without requiring Wireshark.
-- [ ] Expand the port and process knowledge base based on real results.
-- [ ] Check the report layout in a browser on desktop and phone widths.
+- [ ] Collapse the firewall table by default in the local report.
+- [ ] Traffic summary from the capture (top destinations and ports) without Wireshark.
+- [ ] UDP checks for a few common services.
 
 ## Interpretation
 
