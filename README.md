@@ -1,5 +1,12 @@
 # Port Tools v2
 
+[![Version](https://img.shields.io/github/v/tag/marceloasl99/portscanner?label=version&color=0b8a72)](https://github.com/marceloasl99/portscanner/tags)
+[![License: MIT](https://img.shields.io/github/license/marceloasl99/portscanner?color=blue)](LICENSE)
+![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777bb4?logo=php&logoColor=white)
+![PowerShell 5.1+](https://img.shields.io/badge/PowerShell-5.1%2B-5391fe?logo=powershell&logoColor=white)
+[![Last commit](https://img.shields.io/github/last-commit/marceloasl99/portscanner)](https://github.com/marceloasl99/portscanner/commits/main)
+[![Stars](https://img.shields.io/github/stars/marceloasl99/portscanner?style=flat)](https://github.com/marceloasl99/portscanner/stargazers)
+
 A small toolkit with two independent modes:
 
 1. **Remote scan** (`index.html` + `scan.php`): the browser sends IPv4 targets and TCP ports to a PHP server, which tries a TCP connection to each one and returns a report.
@@ -43,6 +50,7 @@ A small toolkit with two independent modes:
 ├── local-scanner.ps1     Local inspector: collects data and builds the HTML report
 ├── Run-local-scan.bat    Double-click launcher for the local inspector
 ├── docs/screenshots/     Images used in this README
+├── LICENSE               MIT license
 └── .htaccess, .gitattributes, README.md
 ```
 
@@ -140,3 +148,7 @@ Limitations: "likely use" and risk levels are estimates from port number, proces
 - `127.0.0.1` or `::1`: localhost only.
 - `0.0.0.0` or `::`: all interfaces.
 - Listening locally does not mean reachable from outside. The firewall may still block it.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
