@@ -21,10 +21,7 @@
         <rect x="4" y="18" width="10" height="10" rx="2.5" class="m-off"/>
         <rect x="18" y="18" width="10" height="10" rx="2.5" class="m-on"/>
       </svg>
-      <div>
-        <h1>Port Tools</h1>
-        <p class="tag">See which ports answer, on machines you are allowed to test.</p>
-      </div>
+      <h1>Port Tools</h1>
       <span class="ver">v2</span>
     </div>
     <nav class="tabs" role="tablist" aria-label="Mode">
@@ -43,14 +40,32 @@
   <div id="banner" class="banner hidden" role="status"></div>
 
   <!-- ===================== SCAN ===================== -->
-  <section id="remote" class="panel" role="tabpanel" aria-labelledby="t-remote">
-    <form id="form" class="block setup" autocomplete="off" novalidate>
-      <div class="setup-left">
+  <section id="remote" class="panel layout" role="tabpanel" aria-labelledby="t-remote">
+    <form id="form" class="setup-form" autocomplete="off" novalidate>
+      <div class="card setup-left">
         <h2 class="h">Targets</h2>
         <label for="targets" class="sr">IPv4 addresses, ranges or subnets</label>
         <textarea id="targets" rows="5" spellcheck="false" placeholder="192.168.1.10&#10;192.168.1.20-30&#10;192.168.1.0/28"></textarea>
-        <p id="targetInfo" class="hint">Addresses, ranges (<code>10.0.0.1-20</code>) and subnets (<code>10.0.0.0/28</code>) are accepted.</p>
+        <p id="targetInfo" class="hint">Addresses, ranges (<code>10.0.0.1-20</code>) and subnets (<code>10.0.0.0/28</code>).</p>
+      </div>
 
+      <div class="card setup-right">
+        <div class="row between">
+          <h2 class="h">Ports <span id="portInfo" class="count">0 selected</span></h2>
+          <div class="row gap">
+            <button type="button" id="all" class="link">All</button>
+            <button type="button" id="clear" class="link">None</button>
+          </div>
+        </div>
+        <div id="presets" class="chips" role="group" aria-label="Port presets"></div>
+        <div id="ports" class="portlist" role="group" aria-label="Individual ports">Loading ports…</div>
+        <div class="custom">
+          <label for="custom" class="lbl">Other</label>
+          <input id="custom" type="text" inputmode="numeric" spellcheck="false" placeholder="8000-8010, 9000">
+        </div>
+      </div>
+      <div class="card setup-run">
+        <h2 class="h">Run</h2>
         <div class="consent">
           <input type="checkbox" id="consent">
           <label for="consent">I own these systems or have written permission to test them.</label>
@@ -58,90 +73,68 @@
         <div class="runbar">
           <button id="scan" class="btn primary" type="submit" disabled>Scan</button>
           <button id="cancel" class="btn" type="button" hidden>Cancel</button>
-          <button id="demo" class="btn ghost" type="button" hidden>Try a demo scan</button>
+          <button id="demo" class="btn ghost" type="button" hidden>Demo</button>
         </div>
         <div id="progress" class="progress hidden" aria-live="polite">
           <div class="bar"><i id="barFill"></i></div>
           <p id="progressText" class="hint"></p>
         </div>
         <p id="error" class="error hidden" role="alert"></p>
-      </div>
-
-      <div class="setup-right">
-        <div class="row between wrap-sm">
-          <h2 class="h">Ports</h2>
-          <div class="row gap">
-            <span id="portInfo" class="hint nomt">0 ports selected</span>
-            <button type="button" id="all" class="link">Select all</button>
-            <button type="button" id="clear" class="link">Clear</button>
-          </div>
-        </div>
-        <div id="presets" class="chips" role="group" aria-label="Port presets"></div>
-        <div id="ports" class="portlist" role="group" aria-label="Individual ports">Loading ports…</div>
-        <div class="custom">
-          <label for="custom" class="lbl">Other ports</label>
-          <input id="custom" type="text" inputmode="numeric" spellcheck="false" placeholder="8000-8010, 9000">
-        </div>
+        <p class="hint foot">Remote scans start from the PHP server. Local inspection never leaves your computer.</p>
       </div>
     </form>
 
-    <div class="result-area">
+    <div class="card result-area">
       <div id="empty" class="empty">
         <div class="ghost-matrix" aria-hidden="true">
-          <i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i>
-          <i></i><i class="on"></i><i></i><i></i><i class="warn"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i>
+          <i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i>
+          <i></i><i class="on"></i><i></i><i></i><i class="warn"></i><i></i><i></i><i class="on"></i>
         </div>
-        <div>
-          <h2>Nothing scanned yet</h2>
-          <p>Add one or more addresses, pick the ports you care about and press Scan. Results appear here as each host answers.</p>
-        </div>
+        <h2>Nothing scanned yet</h2>
+        <p>Add addresses, pick ports and press Scan. Results appear here as each host answers.</p>
       </div>
 
       <div id="results" class="results hidden">
-        <div class="stats" id="stats"></div>
-
-        <div class="toolbar">
+        <div class="res-head">
+          <div class="stats" id="stats"></div>
           <div class="seg" role="group" aria-label="Filter results">
             <button type="button" class="on" data-filter="all">All</button>
             <button type="button" data-filter="open">Open</button>
-            <button type="button" data-filter="risky">Needs attention</button>
+            <button type="button" data-filter="risky">Attention</button>
           </div>
-          <div class="row gap wrap-sm">
+          <div class="row gap">
             <button type="button" class="btn sm" id="exCopy">Copy</button>
-            <button type="button" class="btn sm" id="exMd">Markdown</button>
+            <button type="button" class="btn sm" id="exMd">MD</button>
             <button type="button" class="btn sm" id="exCsv">CSV</button>
             <button type="button" class="btn sm" id="exJson">JSON</button>
           </div>
         </div>
-
         <div id="diff" class="diff hidden"></div>
-
         <div class="res-grid">
-          <div>
-            <div class="matrix-wrap" tabindex="0" aria-label="Port matrix, scroll sideways for more ports">
+          <div class="mx">
+            <div class="matrix-wrap" tabindex="0" aria-label="Port matrix, scroll for more">
               <table id="matrix" class="matrix"></table>
             </div>
             <ul class="legend" aria-label="Legend">
               <li><i class="sw open"></i>Open</li>
-              <li><i class="sw medium"></i>Open, worth a look</li>
-              <li><i class="sw high"></i>Open, exposed risk</li>
+              <li><i class="sw medium"></i>Check</li>
+              <li><i class="sw high"></i>Risk</li>
               <li><i class="sw closed"></i>No connection</li>
-              <li><i class="sw wait"></i>Waiting</li>
+              <li class="meta" id="resultMeta"></li>
             </ul>
           </div>
-          <div>
+          <div class="fd">
             <h2 class="h">Open ports</h2>
             <div id="findings" class="findings"></div>
           </div>
         </div>
-        <p id="resultMeta" class="hint"></p>
       </div>
     </div>
   </section>
 
   <!-- ===================== HISTORY ===================== -->
   <section id="history" class="panel hidden" role="tabpanel" aria-labelledby="t-history">
-    <div class="block wide">
+    <div class="card wide">
       <div class="row between">
         <h2 class="h">Previous scans</h2>
         <button id="histClear" class="link" type="button">Delete history</button>
@@ -154,7 +147,7 @@
   <!-- ===================== LOCAL ===================== -->
   <section id="local" class="panel hidden" role="tabpanel" aria-labelledby="t-local">
     <div class="grid local">
-      <div class="block">
+      <div class="card">
         <h2 class="h">Inspect this Windows computer</h2>
         <p>A web page cannot read the ports your computer is listening on, so a small PowerShell script does it. It runs only on your machine and sends nothing anywhere.</p>
         <div class="row gap spaced wrap-sm">
@@ -168,7 +161,7 @@
         </ol>
         <p class="hint">Prefer a terminal? Run <code>powershell -NoProfile -ExecutionPolicy Bypass -File .\local-scanner.ps1</code>. Add <code>-CaptureSeconds 30</code> in an administrator window to record traffic.</p>
       </div>
-      <div class="block">
+      <div class="card">
         <h2 class="h">What the report shows</h2>
         <dl class="defs">
           <dt>Ports and connections</dt><dd>Every listener and open socket, with the process that owns it and how exposed it is.</dd>
@@ -183,9 +176,7 @@
 
 </main>
 
-<footer class="foot">
-  <p>Remote scans start from the PHP server, not from your browser. Local inspection never leaves this computer. Port Tools v2.</p>
-</footer>
+
 
 <script src="assets/app.js"></script>
 </body>

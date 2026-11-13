@@ -22,7 +22,7 @@ A small toolkit with two independent modes:
 - **History and comparison**: the last 12 scans are kept in the browser. Running the same targets again shows which ports are newly open or no longer open.
 - **Export**: copy as text, or download Markdown, CSV or JSON.
 - **Demo mode**: when no PHP is available (for example GitHub Pages) the interface still works with simulated data. Add `?demo=1` to force it.
-- **Full-width layout**: targets and ports sit in one bar above the results, and every port is visible at once in an adaptive grid (no inner scrolling). Results use the whole width, with the matrix beside the list of open ports.
+- **One-screen layout**: on a Full HD monitor the whole scan page fits without scrolling the page. A slim 44 px header, a top strip with targets, a compact grid of all ports (visible at once) and the run controls, and the results below using the full width: port matrix beside the list of open ports, each with its own scroll.
 - New design with light and dark themes, keyboard navigation, visible focus, reduced-motion support and a layout that works on a phone.
 
 **Server (`scan.php`)**

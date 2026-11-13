@@ -130,7 +130,7 @@ function updateInfo() {
   $('#targetInfo').textContent = t;
   $('#targetInfo').style.color = ok ? '' : 'var(--high)';
   let n = 0;
-  try { n = selectedPorts().length; p = `${n} port${n === 1 ? '' : 's'} selected`; if (n > maxPorts) { p += ` (limit ${maxPorts})`; ok = false; } }
+  try { n = selectedPorts().length; p = `${n} selected`; if (n > maxPorts) { p += ` (limit ${maxPorts})`; ok = false; } }
   catch (e) { p = e.message; ok = false; }
   $('#portInfo').textContent = p;
   $('#portInfo').style.color = ok || n <= maxPorts ? '' : 'var(--high)';
@@ -390,11 +390,11 @@ function summary(v) {
 function renderStats() {
   const s = summary(view);
   $('#stats').innerHTML = [
-    ['', `${s.hosts}${s.hosts < s.total ? ' / ' + s.total : ''}`, 'Hosts checked'],
+    ['', `${s.hosts}${s.hosts < s.total ? ' / ' + s.total : ''}`, 'Hosts'],
     ['', s.checks, 'Checks'],
     ['sig', s.open, 'Open'],
     ['', s.closed, 'No connection'],
-    ['warn', s.flagged, 'Need attention'],
+    ['warn', s.flagged, 'Attention'],
   ].map(([c, n, l]) => `<div class="stat ${c}"><b>${n}</b><span>${l}</span></div>`).join('');
 }
 
@@ -409,8 +409,8 @@ function renderFindings() {
   }
   box.innerHTML = rows.map(r => {
     const cls = r.risk === 'high' ? 'high' : r.risk === 'medium' ? 'medium' : 'open';
-    const tag = cls === 'high' ? '<span class="tg high">Exposed risk</span>' : cls === 'medium' ? '<span class="tg medium">Worth a look</span>' : '';
-    return `<div class="f ${cls}"><span class="ip">${esc(r.ip)}</span><span class="pn">${r.port}</span><span class="sv">${esc(r.service)}${tag}${r.note ? `<small>${esc(r.note)}</small>` : ''}</span><span class="ms">${Number(r.ms).toFixed(1)} ms</span></div>`;
+    const tag = cls === 'high' ? '<span class="tg high">Risk</span>' : cls === 'medium' ? '<span class="tg medium">Check</span>' : '';
+    return `<div class="f ${cls}" title="${esc(r.note || '')}"><span class="ip">${esc(r.ip)}</span><span class="pn">${r.port}</span><span class="sv">${esc(r.service)}${tag}${r.note ? `<small>${esc(r.note)}</small>` : ''}</span></div>`;
   }).join('');
 }
 
@@ -418,7 +418,7 @@ function renderMeta() {
   const v = view;
   const when = new Date(v.ts).toLocaleString();
   const dur = v.durationMs ? ` · ${(v.durationMs / 1000).toFixed(1)} s` : '';
-  $('#resultMeta').textContent = `${when}${dur} · TCP${v.demo ? ' · simulated demo data' : ''}${v.partial ? ' · scan stopped before every host was checked' : ''}`;
+  $('#resultMeta').textContent = `${when}${dur}${v.demo ? ' · demo data' : ''}${v.partial ? ' · stopped early' : ''}`;
 }
 
 $$('.seg button').forEach(b => b.onclick = () => {
