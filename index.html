@@ -44,95 +44,98 @@
 
   <!-- ===================== SCAN ===================== -->
   <section id="remote" class="panel" role="tabpanel" aria-labelledby="t-remote">
-    <div class="grid">
+    <form id="form" class="block setup" autocomplete="off" novalidate>
+      <div class="setup-left">
+        <h2 class="h">Targets</h2>
+        <label for="targets" class="sr">IPv4 addresses, ranges or subnets</label>
+        <textarea id="targets" rows="5" spellcheck="false" placeholder="192.168.1.10&#10;192.168.1.20-30&#10;192.168.1.0/28"></textarea>
+        <p id="targetInfo" class="hint">Addresses, ranges (<code>10.0.0.1-20</code>) and subnets (<code>10.0.0.0/28</code>) are accepted.</p>
 
-      <div class="col-setup">
-        <form id="form" class="block" autocomplete="off" novalidate>
-          <h2 class="h">Targets</h2>
-          <label for="targets" class="sr">IPv4 addresses, ranges or subnets</label>
-          <textarea id="targets" rows="4" spellcheck="false" placeholder="192.168.1.10&#10;192.168.1.20-30&#10;192.168.1.0/28"></textarea>
-          <p id="targetInfo" class="hint">Addresses, ranges (<code>10.0.0.1-20</code>) and subnets (<code>10.0.0.0/28</code>) are accepted.</p>
-
-          <h2 class="h">Ports</h2>
-          <div id="presets" class="chips" role="group" aria-label="Port presets"></div>
-          <div id="ports" class="portlist" role="group" aria-label="Individual ports">Loading ports…</div>
-          <div class="custom">
-            <label for="custom" class="lbl">Other ports</label>
-            <input id="custom" type="text" inputmode="numeric" spellcheck="false" placeholder="8000-8010, 9000">
-          </div>
-          <div class="row between">
-            <p id="portInfo" class="hint">0 ports selected</p>
-            <div class="row gap">
-              <button type="button" id="all" class="link">Select all</button>
-              <button type="button" id="clear" class="link">Clear</button>
-            </div>
-          </div>
-
-          <div class="consent">
-            <input type="checkbox" id="consent">
-            <label for="consent">I own these systems or have written permission to test them.</label>
-          </div>
-
-          <div class="runbar">
-            <button id="scan" class="btn primary" type="submit" disabled>Scan</button>
-            <button id="cancel" class="btn" type="button" hidden>Cancel</button>
-            <button id="demo" class="btn ghost" type="button" hidden>Try a demo scan</button>
-          </div>
-          <div id="progress" class="progress hidden" aria-live="polite">
-            <div class="bar"><i id="barFill"></i></div>
-            <p id="progressText" class="hint"></p>
-          </div>
-          <p id="error" class="error hidden" role="alert"></p>
-        </form>
+        <div class="consent">
+          <input type="checkbox" id="consent">
+          <label for="consent">I own these systems or have written permission to test them.</label>
+        </div>
+        <div class="runbar">
+          <button id="scan" class="btn primary" type="submit" disabled>Scan</button>
+          <button id="cancel" class="btn" type="button" hidden>Cancel</button>
+          <button id="demo" class="btn ghost" type="button" hidden>Try a demo scan</button>
+        </div>
+        <div id="progress" class="progress hidden" aria-live="polite">
+          <div class="bar"><i id="barFill"></i></div>
+          <p id="progressText" class="hint"></p>
+        </div>
+        <p id="error" class="error hidden" role="alert"></p>
       </div>
 
-      <div class="col-result">
-        <div id="empty" class="empty">
-          <div class="ghost-matrix" aria-hidden="true">
-            <i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i>
-            <i></i><i class="on"></i><i></i><i></i><i class="warn"></i><i></i>
-            <i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i>
+      <div class="setup-right">
+        <div class="row between wrap-sm">
+          <h2 class="h">Ports</h2>
+          <div class="row gap">
+            <span id="portInfo" class="hint nomt">0 ports selected</span>
+            <button type="button" id="all" class="link">Select all</button>
+            <button type="button" id="clear" class="link">Clear</button>
           </div>
+        </div>
+        <div id="presets" class="chips" role="group" aria-label="Port presets"></div>
+        <div id="ports" class="portlist" role="group" aria-label="Individual ports">Loading ports…</div>
+        <div class="custom">
+          <label for="custom" class="lbl">Other ports</label>
+          <input id="custom" type="text" inputmode="numeric" spellcheck="false" placeholder="8000-8010, 9000">
+        </div>
+      </div>
+    </form>
+
+    <div class="result-area">
+      <div id="empty" class="empty">
+        <div class="ghost-matrix" aria-hidden="true">
+          <i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i>
+          <i></i><i class="on"></i><i></i><i></i><i class="warn"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i>
+        </div>
+        <div>
           <h2>Nothing scanned yet</h2>
           <p>Add one or more addresses, pick the ports you care about and press Scan. Results appear here as each host answers.</p>
         </div>
-
-        <div id="results" class="results hidden">
-          <div class="stats" id="stats"></div>
-
-          <div class="toolbar">
-            <div class="seg" role="group" aria-label="Filter results">
-              <button type="button" class="on" data-filter="all">All</button>
-              <button type="button" data-filter="open">Open</button>
-              <button type="button" data-filter="risky">Needs attention</button>
-            </div>
-            <div class="row gap wrap-sm">
-              <button type="button" class="btn sm" id="exCopy">Copy</button>
-              <button type="button" class="btn sm" id="exMd">Markdown</button>
-              <button type="button" class="btn sm" id="exCsv">CSV</button>
-              <button type="button" class="btn sm" id="exJson">JSON</button>
-            </div>
-          </div>
-
-          <div id="diff" class="diff hidden"></div>
-
-          <div class="matrix-wrap" tabindex="0" aria-label="Port matrix, scroll sideways for more ports">
-            <table id="matrix" class="matrix"></table>
-          </div>
-          <ul class="legend" aria-label="Legend">
-            <li><i class="sw open"></i>Open</li>
-            <li><i class="sw medium"></i>Open, worth a look</li>
-            <li><i class="sw high"></i>Open, exposed risk</li>
-            <li><i class="sw closed"></i>No connection</li>
-            <li><i class="sw wait"></i>Waiting</li>
-          </ul>
-
-          <h2 class="h spaced">Open ports</h2>
-          <div id="findings" class="findings"></div>
-          <p id="resultMeta" class="hint"></p>
-        </div>
       </div>
 
+      <div id="results" class="results hidden">
+        <div class="stats" id="stats"></div>
+
+        <div class="toolbar">
+          <div class="seg" role="group" aria-label="Filter results">
+            <button type="button" class="on" data-filter="all">All</button>
+            <button type="button" data-filter="open">Open</button>
+            <button type="button" data-filter="risky">Needs attention</button>
+          </div>
+          <div class="row gap wrap-sm">
+            <button type="button" class="btn sm" id="exCopy">Copy</button>
+            <button type="button" class="btn sm" id="exMd">Markdown</button>
+            <button type="button" class="btn sm" id="exCsv">CSV</button>
+            <button type="button" class="btn sm" id="exJson">JSON</button>
+          </div>
+        </div>
+
+        <div id="diff" class="diff hidden"></div>
+
+        <div class="res-grid">
+          <div>
+            <div class="matrix-wrap" tabindex="0" aria-label="Port matrix, scroll sideways for more ports">
+              <table id="matrix" class="matrix"></table>
+            </div>
+            <ul class="legend" aria-label="Legend">
+              <li><i class="sw open"></i>Open</li>
+              <li><i class="sw medium"></i>Open, worth a look</li>
+              <li><i class="sw high"></i>Open, exposed risk</li>
+              <li><i class="sw closed"></i>No connection</li>
+              <li><i class="sw wait"></i>Waiting</li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="h">Open ports</h2>
+            <div id="findings" class="findings"></div>
+          </div>
+        </div>
+        <p id="resultMeta" class="hint"></p>
+      </div>
     </div>
   </section>
 

@@ -294,7 +294,7 @@ async function startScan(ips, ports, targetsText) {
   $('#scan').disabled = true;
   buildMatrix();
   renderStats(); renderFindings(); progress();
-  if (matchMedia('(max-width:900px)').matches) $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('#results').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 
   const queue = [...ips];
   let failure = null;
